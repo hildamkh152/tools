@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>內容生產器</title>
+<style>
+:root{ color-scheme: light;
+  --bg:#faf7f2; --card:#ffffff; --ink:#2b2823; --sub:#8a8378;
+  --line:#eae4da; --accent:#e2725b; --accent2:#f2b705; --accent-soft:#fcefe9;
+  --id:#e7f0ff; --id-line:#cfe0ff; --id-center:#3b6fd4;
+  --pn:#fdeef2; --pn-line:#f8d3de; --pn-center:#d64b74;
+  --chip:#f4efe7;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+  background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:22px 18px 60px}
+header.top{text-align:center;margin-bottom:6px}
+.top h1{font-size:26px;margin:0 0 4px;letter-spacing:.5px}
+.top p{margin:0;color:var(--sub);font-size:14px}
+.hint{background:var(--accent-soft);border:1px solid var(--pn-line);border-radius:12px;
+  padding:10px 14px;font-size:13px;color:#7a4b3f;margin:16px 0 22px}
+.starter{background:linear-gradient(180deg,#fff,#fbf6ef);border:1px solid var(--line);
+  border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.srow{display:flex;gap:10px;align-items:center}
+@media(max-width:640px){.srow{flex-wrap:wrap}}
+.srow .mag{font-size:20px}
+.srow input{flex:1;min-width:180px;border:1px solid var(--line);border-radius:10px;padding:11px 13px;
+  font-family:inherit;font-size:14px;color:var(--ink);outline:none;background:#fff}
+.srow input:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.stips{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.guidelink{border:0;background:transparent;color:var(--accent);padding:0;font-size:13px;text-decoration:underline}
+.guidelink:hover{color:#d5604a}
+.snote{font-size:12px;color:var(--sub)}
+#autoBtn.loading{opacity:.7;pointer-events:none}
+#autoBtn .sp2{display:inline-block;width:12px;height:12px;border:2px solid #fff;border-top-color:transparent;
+  border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:6px}
+.guide{background:#fffdf6;border:1px solid #f3e4b8;border-radius:14px;padding:14px 18px;margin-bottom:16px}
+.guide h3{margin:0 0 6px;font-size:15px}
+.guide p{margin:0 0 8px;font-size:13px;color:#6b6455}
+.guide ol{margin:0 0 8px;padding-left:20px;font-size:13.5px}
+.guide li{margin:4px 0}
+.guide .gsmall{font-size:12px;color:var(--sub);margin:0}
+.grids{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:760px){.grids{grid-template-columns:1fr}}
+.gcard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;
+  box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.gcard h2{font-size:15px;margin:0 0 3px;display:flex;align-items:center;gap:7px}
+.miniref{margin-left:auto;border:1px solid var(--line);background:#fff;border-radius:8px;padding:3px 9px;cursor:pointer;color:var(--sub)}
+.miniref:hover{border-color:var(--accent);color:var(--accent)}
+.miniref:disabled{opacity:.5;cursor:not-allowed}
+.miniref .ic{display:inline-block;font-size:13px}
+.miniref.spin .ic{animation:spin .8s linear infinite}
+.gcard .desc{font-size:12px;color:var(--sub);margin:0 0 12px}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.cell{border:1px solid var(--line);border-radius:10px;padding:6px;min-height:60px;
+  display:flex;align-items:center;justify-content:center;transition:.15s}
+.cell textarea{width:100%;border:0;background:transparent;resize:none;text-align:center;
+  font-family:inherit;font-size:13px;color:var(--ink);outline:none;overflow:hidden;height:44px;line-height:1.35}
+.cell.center{font-weight:700}
+.grid.id .cell{background:#fff}
+.grid.id .cell.center{background:var(--id);border-color:var(--id-line)}
+.grid.id .cell.center textarea{color:var(--id-center);font-size:15px}
+.grid.pn .cell{background:#fff}
+.grid.pn .cell.center{background:var(--pn);border-color:var(--pn-line)}
+.grid.pn .cell.center textarea{color:var(--pn-center);font-size:15px}
+.cell:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:24px 0 16px}
+button{font-family:inherit;font-size:14px;border-radius:10px;padding:10px 16px;cursor:pointer;
+  border:1px solid var(--line);background:#fff;color:var(--ink);transition:.15s}
+button:hover{border-color:var(--accent);color:var(--accent)}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+button.primary:hover{background:#d5604a;color:#fff}
+button:disabled{opacity:.5;cursor:not-allowed}
+.count{margin-left:auto;font-size:13px;color:var(--sub)}
+.results{margin-top:10px;display:grid;gap:10px}
+.rcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.rcombo{font-size:12px;color:var(--sub);margin-bottom:7px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tag{background:var(--id);color:var(--id-center);border-radius:6px;padding:1px 8px;font-size:11.5px}
+.tag.p{background:var(--pn);color:var(--pn-center)}
+.plus{color:var(--sub)}
+.titles{display:grid;gap:6px}
+.title{display:flex;gap:8px;align-items:flex-start;font-size:14.5px;padding:5px 8px;border-radius:8px}
+.title:hover{background:var(--chip)}
+.title .txt{flex:1}
+.title .copy1{border:0;background:transparent;color:var(--sub);padding:2px 6px;font-size:12px;opacity:.7}
+.title .copy1:hover{color:var(--accent);opacity:1}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+.swapbtn{font-size:12.5px;padding:5px 11px}
+.aibtn{font-size:12.5px;padding:5px 11px;border-style:dashed}
+.aibtn .sp{display:inline-block;width:11px;height:11px;border:2px solid var(--accent);border-top-color:transparent;
+  border-radius:50%;animation:spin .7s linear infinite;vertical-align:-1px;margin-right:5px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.aiwrap{margin-top:8px;display:grid;gap:6px}
+.aititle{font-size:14px;padding:5px 8px;border-radius:8px;background:#fffdf4;border:1px solid #f6e7b0;
+  display:flex;gap:8px;align-items:flex-start}
+.aititle .b{color:var(--accent2);font-size:11px;margin-top:2px}
+.empty{color:var(--sub);text-align:center;padding:40px;font-size:14px}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+  background:#2b2823;color:#fff;padding:9px 18px;border-radius:22px;font-size:13px;opacity:0;
+  transition:.25s;pointer-events:none;z-index:50}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+dialog{border:0;border-radius:16px;padding:0;max-width:600px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+dialog::backdrop{background:rgba(0,0,0,.35)}
+.dlg{padding:18px}
+.dlg h3{margin:0 0 10px;font-size:16px}
+.dlg textarea{width:100%;height:280px;border:1px solid var(--line);border-radius:10px;padding:10px;
+  font-family:inherit;font-size:13px;resize:vertical;color:var(--ink)}
+.dlg .row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>內容生產器</h1>
+    <p>身份 × 觀眾痛點 = 拍不完的主題</p>
+  </header>
+
+  <div class="hint">
+    ✏️ 直接點格仔就可以改字。中間格填你嘅<b>身份</b>同觀眾嘅<b>核心煩惱</b>，周圍 8 格填相關嘅事物同具體困擾。改完撳「交叉生成主題」。
+  </div>
+
+  <div class="starter">
+    <div class="srow">
+      <span class="mag">🧭</span>
+      <input id="industry" type="text" placeholder="打入你嘅行業／身份，例如：健身教練、花藝師、瑜伽老師…" />
+      <button class="primary" id="autoBtn">幫我生成</button>
+    </div>
+    <div class="stips">
+      <button class="guidelink" id="guideBtn">💡 點樣搵到觀眾嘅煩惱？（引導）</button>
+      <span class="snote">AI 會直接讀你嘅身份，幫你搵返觀眾嘅真實痛點，你再微調就得。</span>
+    </div>
+  </div>
+
+  <div class="guide" id="guidePanel" hidden>
+    <h3>🔎 搵觀眾痛點嘅 5 條問題</h3>
+    <p>諗唔到觀眾煩惱？跟住呢幾條問題諗，通常就有答案：</p>
+    <ol>
+      <li><b>症狀 / 問題：</b>佢哋身上有咩問題，係想搵你解決嘅？</li>
+      <li><b>時間：</b>佢哋每日邊件事最花時間、最想快啲搞掂？</li>
+      <li><b>金錢：</b>佢哋想慳邊度、想多賺邊度？</li>
+      <li><b>情緒：</b>佢哋私底下最焦慮、最怕嘅係咩？</li>
+      <li><b>知識：</b>佢哋成日 Google、成日問人嘅問題係咩？</li>
+    </ol>
+    <p class="gsmall">Tips：去留言區、社團、評價、影片留言度抄低真人講嘅字眼，會最貼地。</p>
+  </div>
+
+  <div class="grids">
+    <div class="gcard">
+      <h2><span class="dot" style="background:var(--id-center)"></span>第一步 · 定位身份</h2>
+      <p class="desc">中間 = 你係邊個；周圍 = 你最常接觸嘅事物</p>
+      <div class="grid id" id="gridId"></div>
+    </div>
+    <div class="gcard">
+      <h2><span class="dot" style="background:var(--pn-center)"></span>第二步 · 觀眾痛點<button id="refreshPn" class="miniref" title="叫 AI 換一批觀眾痛點"><span class="ic">🔄</span></button></h2>
+      <p class="desc">中間 = 觀眾核心煩惱；周圍 = 具體困擾</p>
+      <div class="grid pn" id="gridPn"></div>
+    </div>
+  </div>
+
+  <div class="bar">
+    <button class="primary" id="genBtn">🚀 交叉生成主題</button>
+    <button id="copyBtn">📋 全部複製</button>
+    <button id="csvBtn">⬇️ 下載 CSV</button>
+    <button id="txtBtn">⬇️ 下載 TXT</button>
+    <span class="count" id="count"></span>
+  </div>
+
+  <div class="results" id="results">
+    <div class="empty">撳上面「🚀 交叉生成主題」就會即刻幫你砌出一堆主題 👆</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<dialog id="exportDlg"><div class="dlg">
+  <h3 id="dlgTitle">匯出內容</h3>
+  <textarea id="dlgText" readonly></textarea>
+  <div class="row">
+    <button id="dlgCopy" class="primary">複製全部</button>
+    <button onclick="document.getElementById('exportDlg').close()">關閉</button>
+  </div>
+</div></dialog>
+
+<script>
+"use strict";
+try{
+
+// ---------- 預設範例（上班族） ----------
+const SEED = {
+  id: { center:"上班族", around:["理財","職場技能","通勤日常","減壓","副業","效率工具","健康飲食","穿搭"] },
+  pn: { center:"觀眾煩惱", around:["錢唔夠使","冇時間","工作壓力大","唔想返工","學唔到新嘢","冇成就感","想轉行","成日拖延"] }
+};
+
+const gridId=document.getElementById("gridId");
+const gridPn=document.getElementById("gridPn");
+
+function buildGrid(el, seed){
+  if(!el) return;
+  el.innerHTML="";
+  const around=[...(seed.around||[])];
+  let ai=0;
+  for(let i=0;i<9;i++){
+    const cell=document.createElement("div");
+    cell.className="cell"+(i===4?" center":"");
+    const ta=document.createElement("textarea");
+    ta.rows=1;
+    ta.value = i===4 ? (seed.center||"") : (around[ai++]||"");
+    ta.dataset.center = i===4 ? "1":"0";
+    ta.addEventListener("input",()=>autoSize(ta));
+    cell.appendChild(ta);
+    el.appendChild(cell);
+    setTimeout(()=>autoSize(ta),0);
+  }
+}
+function autoSize(ta){ ta.style.height="auto"; ta.style.height=Math.max(44,ta.scrollHeight)+"px"; }
+buildGrid(gridId,SEED.id);
+buildGrid(gridPn,SEED.pn);
+
+function readGrid(el){
+  if(!el) return {center:"",around:[]};
+  const tas=[...el.querySelectorAll("textarea")];
+  let center="";const around=[];
+  tas.forEach(t=>{ const v=t.value.trim(); if(t.dataset.center==="1")center=v; else if(v)around.push(v); });
+  return {center,around};
+}
+
+// ---------- 標題公式 ----------
+const TPL = [
+  (id,topic,pain)=>`《${id}5分鐘搞定${topic}，告別${cleanPain(pain)}！》`,
+  (id,topic,pain)=>`《${id}如何靠${topic}解決「${cleanPain(pain)}」？》`,
+  (id,topic,pain)=>`《${cleanPain(pain)}？試呢個${topic}小技巧就得》`,
+  (id,topic,pain)=>`《3個${topic}方法，令${id}唔再${cleanPain(pain)}》`,
+  (id,topic,pain)=>`《${id}必學：用${topic}拯救${cleanPain(pain)}》`,
+  (id,topic,pain)=>`《我係${id}，靠${topic}擺脫${cleanPain(pain)}的日子》`,
+  (id,topic,pain)=>`《唔使花錢！${id}的${topic}對抗${cleanPain(pain)}實測》`
+];
+const EXTRA=[
+  (id,t,p)=>`《${id}唔講你唔知：${t}原來可以救${cleanPain(p)}》`,
+  (id,t,p)=>`《一條片教會你：${t}對付${cleanPain(p)}的3步驟》`,
+  (id,t,p)=>`《${cleanPain(p)}的${id}，最後靠${t}翻身》`,
+  (id,t,p)=>`《別再${cleanPain(p)}！${id}的${t}日常大公開》`,
+  (id,t,p)=>`《${t} × ${id}：連我媽都問點解咁快搞掂${cleanPain(p)}》`
+];
+function cleanPain(p){ return (p||"").replace(/[好很超]/g,"").replace(/大$|緊$/,""); }
+function pick(arr,n){ const c=[...arr];const out=[];while(out.length<n&&c.length){out.push(c.splice(Math.floor(Math.random()*c.length),1)[0]);}return out; }
+function shuffle(a){ const c=[...a];for(let i=c.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[c[i],c[j]]=[c[j],c[i]];}return c; }
+
+let DATA=[];
+
+function generate(){
+  const idG=readGrid(gridId), pnG=readGrid(gridPn);
+  if(!idG.center){ toast("請先填第一格：你嘅身份"); return; }
+  if(idG.around.length===0||pnG.around.length===0){ toast("周圍格至少各填一個"); return; }
+  DATA=[];
+  idG.around.forEach(topic=>{
+    pnG.around.forEach(pain=>{
+      const pool=shuffle([...TPL,...EXTRA]);
+      const d={id:idG.center,topic,pain,pool,offset:0,titles:[],ai:[]};
+      d.titles=threeFrom(d);
+      DATA.push(d);
+    });
+  });
+  render();
+  toast(`砌好 ${DATA.length} 組主題！`);
+}
+function threeFrom(d){
+  const out=[];
+  for(let k=0;k<3;k++){ out.push(d.pool[(d.offset+k)%d.pool.length](d.id,d.topic,d.pain)); }
+  return out;
+}
+function shuffleCombo(i){
+  const d=DATA[i];
+  d.offset=(d.offset+3)%d.pool.length;
+  d.titles=threeFrom(d);
+  const tt=document.getElementById("tt-"+i);
+  if(tt){ tt.innerHTML=d.titles.map(t=>rowTitle(t)).join("");
+    tt.querySelectorAll(".copy1").forEach(b=>b.onclick=()=>{copyText(b.dataset.t);toast("已複製標題");}); }
+  updCount();
+}
+function render(){
+  const box=document.getElementById("results");
+  if(!box) return;
+  if(!DATA.length){ box.innerHTML='<div class="empty">未有主題</div>'; return; }
+  box.innerHTML="";
+  DATA.forEach((d,i)=>{
+    const card=document.createElement("div");card.className="rcard";
+    const titlesHtml=d.titles.map(t=>rowTitle(t)).join("");
+    card.innerHTML=`
+      <div class="rcombo"><span class="tag">${esc(d.topic)}</span><span class="plus">＋</span><span class="tag p">${esc(d.pain)}</span></div>
+      <div class="titles" id="tt-${i}">${titlesHtml}</div>
+      <div class="aiwrap" id="ai-${i}"></div>
+      <div class="btnrow">
+        <button class="swapbtn" data-i="${i}">🔄 換一批例子</button>
+        <button class="aibtn" data-i="${i}">✨ AI 生成更多變化</button>
+      </div>`;
+    box.appendChild(card);
+  });
+  box.querySelectorAll(".copy1").forEach(b=>b.onclick=()=>{copyText(b.dataset.t);toast("已複製標題");});
+  box.querySelectorAll(".swapbtn").forEach(b=>b.onclick=()=>shuffleCombo(+b.dataset.i));
+  box.querySelectorAll(".aibtn").forEach(b=>b.onclick=()=>aiMore(+b.dataset.i,b));
+  updCount();
+}
+function updCount(){
+  const c=document.getElementById("count");
+  if(c) c.textContent=`共 ${DATA.length} 組 · ${DATA.reduce((a,d)=>a+d.titles.length+d.ai.length,0)} 個標題`;
+}
+function rowTitle(t){ return `<div class="title"><span class="txt">${esc(t)}</span><button class="copy1" data-t="${esc(t)}">複製</button></div>`; }
+function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+async function aiMore(i,btn){
+  const d=DATA[i];
+  btn.disabled=true; btn.innerHTML='<span class="sp"></span>生成緊…';
+  try{
+    let titles=[];
+    if(await waitForAI(5000)){
+      const prompt=`你係短影音內容策劃。身份：「${d.id}」，主題方向：「${d.topic}」，觀眾痛點：「${d.pain}」。`
+        +`請生成 5 個吸睛、口語化、適合 Reels/TikTok/小紅書 的影片標題。`
+        +`【必須全部用繁體中文（台灣／香港正體字），絕對唔可以出現任何簡體字】。`
+        +`每個標題一行，只輸出標題本身，唔好加編號、符號或解釋。`;
+      const res=await window.cowork.askClaude(prompt,[]);
+      const text=toTrad(extractText(res));
+      titles=text.split("\n").map(s=>s.replace(/^[\s\-\*\d\.、）)]+/,"").trim()).filter(s=>s.length>3).slice(0,6);
+    }
+    if(!titles.length){ titles=localVariations(d); }
+    appendAI(i,titles);
+  }catch(e){
+    appendAI(i,localVariations(d));
+  }finally{
+    btn.disabled=false; btn.innerHTML='✨ AI 生成更多變化';
+  }
+}
+function appendAI(i,titles){
+  const d=DATA[i]; d.ai=[...d.ai,...titles];
+  const wrap=document.getElementById("ai-"+i);
+  if(!wrap) return;
+  titles.forEach(t=>{ const el=document.createElement("div");el.className="aititle";
+    el.innerHTML=`<span class="b">✨</span><span class="txt">${esc(t)}</span>`;
+    el.onclick=()=>{copyText(t);toast("已複製標題");}; wrap.appendChild(el); });
+  updCount();
+}
+function localVariations(d){ return pick(EXTRA,3).map(fn=>fn(d.id,d.topic,d.pain)); }
+
+// ---------- 匯出 ----------
+function allText(){
+  return DATA.map(d=>{
+    const all=[...d.titles,...d.ai];
+    return `【${d.topic} ＋ ${d.pain}】\n`+all.map(t=>"  • "+t).join("\n");
+  }).join("\n\n");
+}
+function allCSV(){
+  const rows=[["身份","主題","痛點","標題","來源"]];
+  DATA.forEach(d=>{
+    d.titles.forEach(t=>rows.push([d.id,d.topic,d.pain,t,"公式"]));
+    d.ai.forEach(t=>rows.push([d.id,d.topic,d.pain,t,"AI"]));
+  });
+  return "﻿"+rows.map(r=>r.map(c=>`"${(c||"").replace(/"/g,'""')}"`).join(",")).join("\n");
+}
+function download(name,content,type){
+  try{
+    const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();
+    a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+    toast("開始下載 "+name);
+  }catch(e){ openExport(name+"（複製以下內容儲存）",content); }
+}
+function openExport(title,text){
+  const dt=document.getElementById("dlgTitle"), dx=document.getElementById("dlgText"), dg=document.getElementById("exportDlg");
+  if(dt) dt.textContent=title; if(dx) dx.value=text; if(dg&&dg.showModal) dg.showModal();
+}
+
+// ========== 簡體 → 繁體 安全網 ==========
+const S2T={
+"时":"時","间":"間","问":"問","题":"題","应":"應","该":"該","学":"學","习":"習","会":"會","个":"個","们":"們","这":"這","么":"麼","头":"頭","长":"長","体":"體","关":"關","节":"節","让":"讓","认":"認","识":"識","数":"數","张":"張","报":"報","开":"開","门":"門","电":"電","脑":"腦","网":"網","页":"頁","实":"實","现":"現","变":"變","号":"號","术":"術","说":"說","话":"話","讲":"講","论":"論","语":"語","读":"讀","书":"書","笔":"筆","记":"記","单":"單","杂":"雜","处":"處","备":"備","灵":"靈","众":"眾","观":"觀","点":"點","调":"調","经":"經","络":"絡","湿":"濕","疗":"療","医":"醫","药":"藥","养":"養","补":"補","气":"氣","脏":"臟","肾":"腎","冻":"凍","结":"結","块":"塊","项":"項","类":"類","别":"別","决":"決","传":"傳","统":"統","转":"轉","载":"載","输":"輸","选":"選","边":"邊","达":"達","过":"過","还":"還","进":"進","远":"遠","迟":"遲","运":"運","连":"連","适":"適","递":"遞","钱":"錢","银":"銀","铁":"鐵","钟":"鐘","钢":"鋼","针":"針","锁":"鎖","错":"錯","键":"鍵","镜":"鏡","阳":"陽","阴":"陰","阶":"階","队":"隊","际":"際","陆":"陸","隐":"隱","险":"險","难":"難","顾":"顧","顿":"頓","预":"預","领":"領","频":"頻","颜":"顏","额":"額","颗":"顆","风":"風","飞":"飛","饭":"飯","饮":"飲","饱":"飽","饿":"餓","馆":"館","驾":"駕","骑":"騎","验":"驗","齿":"齒","鸡":"雞","鸟":"鳥","鱼":"魚","鲜":"鮮","麦":"麥","齐":"齊","龙":"龍","农":"農","况":"況","减":"減","凉":"涼","击":"擊","则":"則","刚":"剛","创":"創","删":"刪","剂":"劑","剑":"劍","劝":"勸","办":"辦","务":"務","势":"勢","劳":"勞","华":"華","协":"協","卖":"賣","卫":"衛","厂":"廠","厅":"廳","历":"歷","厉":"厲","压":"壓","厌":"厭","参":"參","双":"雙","叠":"疊","叹":"嘆","吗":"嗎","员":"員","响":"響","唤":"喚","喷":"噴","嘱":"囑","团":"團","园":"園","围":"圍","图":"圖","圆":"圓","场":"場","坏":"壞","坚":"堅","声":"聲","壳":"殼","够":"夠","夹":"夾","夺":"奪","奋":"奮","奖":"獎","妆":"妝","妈":"媽","娱":"娛","婴":"嬰","宁":"寧","宝":"寶","宠":"寵","审":"審","宪":"憲","宽":"寬","宾":"賓","对":"對","寻":"尋","导":"導","寿":"壽","将":"將","尔":"爾","尘":"塵","尝":"嘗","尽":"盡","层":"層","属":"屬","岁":"歲","岛":"島","岭":"嶺","币":"幣","帅":"帥","师":"師","帐":"帳","帘":"簾","带":"帶","帮":"幫","广":"廣","庄":"莊","庆":"慶","废":"廢","异":"異","弃":"棄","弥":"彌","弯":"彎","归":"歸","录":"錄","彻":"徹","径":"徑","忆":"憶","忧":"憂","怀":"懷","怜":"憐","总":"總","恋":"戀","恳":"懇","恶":"惡","恼":"惱","恒":"恆","悬":"懸","惊":"驚","惧":"懼","惨":"慘","惯":"慣","愤":"憤","懒":"懶","战":"戰","戏":"戲","扑":"撲","执":"執","扩":"擴","扫":"掃","扬":"揚","扰":"擾","抚":"撫","护":"護","担":"擔","拟":"擬","拣":"揀","拥":"擁","择":"擇","挂":"掛","挡":"擋","挣":"掙","挤":"擠","挥":"揮","捞":"撈","损":"損","换":"換","捡":"撿","据":"據","掷":"擲","撑":"撐","摄":"攝","摆":"擺","摊":"攤","敌":"敵","断":"斷","无":"無","旧":"舊","显":"顯","晒":"曬","晓":"曉","暂":"暫","机":"機","杀":"殺","权":"權","条":"條","来":"來","杨":"楊","极":"極","构":"構","枢":"樞","枪":"槍","柜":"櫃","标":"標","栋":"棟","栏":"欄","树":"樹","样":"樣","桥":"橋","检":"檢","楼":"樓","欢":"歡","欧":"歐","残":"殘","毁":"毀","毕":"畢","汇":"匯","汉":"漢","汤":"湯","沟":"溝","泪":"淚","泽":"澤","洁":"潔","洒":"灑","测":"測","济":"濟","浓":"濃","涂":"塗","涨":"漲","渐":"漸","渔":"漁","湾":"灣","满":"滿","滚":"滾","滤":"濾","滨":"濱","滩":"灘","潜":"潛","灭":"滅","灯":"燈","灾":"災","炉":"爐","炼":"煉","烂":"爛","烦":"煩","烧":"燒","烫":"燙","热":"熱","营":"營","烛":"燭","爱":"愛","爷":"爺","牵":"牽","犹":"猶","状":"狀","独":"獨","狮":"獅","狱":"獄","猎":"獵","猫":"貓","献":"獻","猪":"豬","玛":"瑪","环":"環","玺":"璽","画":"畫","畅":"暢","疟":"瘧","疮":"瘡","疯":"瘋","痒":"癢","痪":"瘓","瘾":"癮","皱":"皺","盏":"盞","盐":"鹽","监":"監","盖":"蓋","盘":"盤","睁":"睜","瞒":"瞞","矫":"矯","码":"碼","硕":"碩","础":"礎","确":"確","碍":"礙","碱":"鹼","礼":"禮","祸":"禍","祷":"禱","禄":"祿","种":"種","积":"積","称":"稱","稳":"穩","穷":"窮","窃":"竊","窍":"竅","窝":"窩","竖":"豎","竞":"競","笋":"筍","笼":"籠","筑":"築","签":"簽","简":"簡","篮":"籃","粪":"糞","粮":"糧","紧":"緊","纠":"糾","红":"紅","纤":"纖","约":"約","级":"級","纪":"紀","纯":"純","纱":"紗","纲":"綱","纳":"納","纵":"縱","纷":"紛","纸":"紙","纹":"紋","纺":"紡","纽":"紐","线":"線","练":"練","组":"組","细":"細","织":"織","终":"終","绍":"紹","绑":"綁","绒":"絨","绕":"繞","绘":"繪","给":"給","绝":"絕","绢":"絹","继":"繼","绩":"績","绪":"緒","续":"續","绳":"繩","维":"維","绵":"綿","综":"綜","绿":"綠","缓":"緩","缔":"締","缕":"縷","编":"編","缘":"緣","缚":"縛","缝":"縫","缠":"纏","缩":"縮","缴":"繳","罗":"羅","罚":"罰","罢":"罷","翘":"翹","联":"聯","肃":"肅","肠":"腸","肤":"膚","肿":"腫","胀":"脹","胁":"脅","脉":"脈","脓":"膿","脸":"臉","腻":"膩","舰":"艦","舱":"艙","艰":"艱","艳":"艷","芜":"蕪","苏":"蘇","苹":"蘋","范":"範","荐":"薦","获":"獲","萝":"蘿","蓝":"藍","蔼":"藹","虑":"慮","虽":"雖","蚀":"蝕","蚁":"蟻","蚂":"螞","蚕":"蠶","蜡":"蠟","蝇":"蠅","蝉":"蟬","衬":"襯","袄":"襖","装":"裝","裤":"褲","见":"見","规":"規","觅":"覓","视":"視","览":"覽","觉":"覺","触":"觸","誉":"譽","计":"計","订":"訂","讥":"譏","讨":"討","训":"訓","议":"議","讯":"訊","讳":"諱","许":"許","讹":"訛","讼":"訟","讽":"諷","设":"設","访":"訪","诀":"訣","证":"證","评":"評","诈":"詐","诉":"訴","诊":"診","词":"詞","译":"譯","试":"試","诗":"詩","诚":"誠","诞":"誕","询":"詢","详":"詳","诫":"誡","误":"誤","诱":"誘","诵":"誦","请":"請","诸":"諸","诺":"諾","诽":"誹","课":"課","谁":"誰","谅":"諒","谈":"談","谊":"誼","谋":"謀","谎":"謊","谐":"諧","谓":"謂","谚":"諺","谜":"謎","谢":"謝","谣":"謠","谤":"謗","谦":"謙","谨":"謹","谬":"謬","谱":"譜","谴":"譴","贝":"貝","贞":"貞","负":"負","贡":"貢","财":"財","责":"責","贤":"賢","败":"敗","账":"賬","货":"貨","质":"質","贩":"販","贪":"貪","贫":"貧","购":"購","贮":"貯","贯":"貫","贱":"賤","贴":"貼","贵":"貴","贷":"貸","贸":"貿","费":"費","贺":"賀","贼":"賊","贾":"賈","资":"資","赋":"賦","赌":"賭","赎":"贖","赏":"賞","赐":"賜","赔":"賠","赖":"賴","赚":"賺","赛":"賽","赠":"贈","赢":"贏","赵":"趙","赶":"趕","趋":"趨","跃":"躍","践":"踐","踊":"踴","车":"車","轨":"軌","轩":"軒","轮":"輪","软":"軟","轰":"轟","轴":"軸","轻":"輕","轿":"轎","较":"較","辆":"輛","辉":"輝","辈":"輩","辐":"輻","辖":"轄","辞":"辭","迁":"遷","迈":"邁","违":"違","迹":"跡","逊":"遜","逻":"邏","遗":"遺","邓":"鄧","邮":"郵","郑":"鄭","邻":"鄰","酱":"醬","酿":"釀","释":"釋","钉":"釘","钓":"釣","钝":"鈍","钞":"鈔","钠":"鈉","钥":"鑰","钦":"欽","钩":"鉤","钮":"鈕","钳":"鉗","钻":"鑽","铃":"鈴","铅":"鉛","铜":"銅","铝":"鋁","铭":"銘","链":"鏈","销":"銷","锅":"鍋","锈":"鏽","锋":"鋒","锡":"錫","锣":"鑼","锤":"錘","锦":"錦","锯":"鋸","锻":"鍛","镀":"鍍","镇":"鎮","闪":"閃","闭":"閉","闯":"闖","闲":"閑","闷":"悶","闸":"閘","闹":"鬧","闻":"聞","阀":"閥","阁":"閣","阅":"閱","阔":"闊","阵":"陣","陈":"陳","陕":"陝","随":"隨","隶":"隸","雏":"雛","雾":"霧","霉":"黴","静":"靜","韧":"韌","韩":"韓","韦":"韋","顶":"頂","顷":"頃","顺":"順","须":"須","顽":"頑","颁":"頒","颂":"頌","颅":"顱","颇":"頗","颈":"頸","颓":"頹","颖":"穎","颠":"顛","颤":"顫","飘":"飄","饥":"飢","饰":"飾","饲":"飼","饶":"饒","饼":"餅","饺":"餃","馄":"餛","馅":"餡","馒":"饅","马":"馬","驰":"馳","驱":"驅","驳":"駁","驴":"驢","驶":"駛","驼":"駝","骂":"罵","骄":"驕","骆":"駱","骇":"駭","骏":"駿","骗":"騙","骚":"騷","骤":"驟","鲍":"鮑","鲸":"鯨","鸣":"鳴","鸦":"鴉","鸭":"鴨","鸽":"鴿","鹅":"鵝","鹊":"鵲","鹏":"鵬","鹤":"鶴","鹰":"鷹","龄":"齡","龟":"龜","发":"發","复":"複","后":"後","惫":"憊","脱":"脫","划":"劃","强":"強","动":"動","区":"區","听":"聽","买":"買","价":"價","产":"產","优":"優","储":"儲","儿":"兒","兴":"興","义":"義","乐":"樂","举":"舉","临":"臨","丰":"豐","亏":"虧","亚":"亞","亲":"親","从":"從","仅":"僅","伤":"傷","债":"債","剧":"劇","励":"勵","县":"縣","厨":"廚","叶":"葉","吓":"嚇","启":"啟","几":"幾","凭":"憑","净":"淨","凑":"湊","军":"軍","册":"冊","兰":"蘭","伟":"偉","侧":"側","惩":"懲","兽":"獸","丧":"喪","乡":"鄉","乱":"亂","争":"爭","亿":"億","仪":"儀","灿":"燦","职":"職","泼":"潑","涩":"澀","滞":"滯","严":"嚴","郁":"鬱"
+};
+const S2T_PHRASE={"头发":"頭髮","脱发":"脫髮","掉发":"掉髮","白发":"白髮","染发":"染髮","护发":"護髮","发型":"髮型","理发":"理髮",
+"重复":"重複","复杂":"複雜","恢复":"恢復","反复":"反覆","复习":"複習",
+"放松":"放鬆","轻松":"輕鬆","松弛":"鬆弛",
+"干燥":"乾燥","干净":"乾淨","饼干":"餅乾","干货":"乾貨",
+"里面":"裡面","哪里":"哪裡","这里":"這裡","那里":"那裡","心里":"心裡",
+"面条":"麵條","面包":"麵包","泡面":"泡麵","面粉":"麵粉",
+"皇后":"皇后","后面":"後面","之后":"之後","以后":"以後","然后":"然後","最后":"最後","背后":"背後","后悔":"後悔"};
+function toTrad(s){
+  if(!s||typeof s!=="string") return s;
+  Object.keys(S2T_PHRASE).forEach(k=>{ if(s.indexOf(k)>=0) s=s.split(k).join(S2T_PHRASE[k]); });
+  let out="";
+  for(const ch of s){ out += (S2T[ch]||ch); }
+  return out;
+}
+
+// ========== 純 AI ==========
+function extractText(res){
+  if(res==null) return "";
+  if(typeof res==="string") return res;
+  if(Array.isArray(res)) return res.map(extractText).join("\n");
+  if(typeof res==="object"){
+    if(typeof res.text==="string") return res.text;
+    if(res.content!=null) return extractText(res.content);
+    if(res.structuredContent!=null) return extractText(res.structuredContent);
+    if(res.message!=null) return extractText(res.message);
+    if(res.output!=null) return extractText(res.output);
+    try{ return JSON.stringify(res); }catch(e){ return ""; }
+  }
+  return String(res);
+}
+function parseJSON(text){
+  if(!text) return null;
+  if(typeof text!=="string") text=extractText(text);
+  let t=text.replace(/```json/gi,"").replace(/```/g,"").trim();
+  const a=t.indexOf("{"), b=t.lastIndexOf("}");
+  if(a>=0&&b>a){ t=t.slice(a,b+1); }
+  try{ return JSON.parse(t); }catch(e){ return null; }
+}
+function parseArr(text){
+  if(typeof text!=="string") text=extractText(text);
+  let t=text.replace(/```json/gi,"").replace(/```/g,"").trim();
+  const a=t.indexOf("["), b=t.lastIndexOf("]");
+  if(a>=0&&b>a) t=t.slice(a,b+1);
+  try{ const arr=JSON.parse(t); return Array.isArray(arr)?arr:null; }catch(e){ return null; }
+}
+function sanitizeArr(arr){
+  return (Array.isArray(arr)?arr:[]).map(x=>String(x).trim())
+    .filter(x=>x.length>=1&&x.length<=12&&!/主題方向|觀眾痛點|口語|具體|字內|^\d+個/.test(x));
+}
+function fewShotPrompt(ind){
+  return `你係社群內容策劃。行業／身份：「${ind}」。\n`
+   +`請你自己判斷呢個身份嘅【目標觀眾】係邊啲人、佢哋真實會有咩痛點（即係佢哋想搵呢個身份幫手解決嘅問題），以及呢個身份可以拍咩主題方向。\n`
+   +`輸出一個 JSON，格式如下（唔好加任何解釋或 markdown）：\n`
+   +`{"id":{"center":"身份(簡短)","around":["主題方向 ×8"]},"pn":{"center":"觀眾煩惱","around":["觀眾痛點 ×8"]}}\n`
+   +`id.around 同 pn.around 各要 8 個，每個 2 至 10 個字。全部繁體中文（台灣／香港正體字），禁止簡體字。`;
+}
+function fillGrids(obj){
+  if(obj.id&&obj.id.center){ buildGrid(gridId,{center:obj.id.center,around:(obj.id.around||[]).slice(0,8)}); }
+  if(obj.pn&&obj.pn.center){ buildGrid(gridPn,{center:obj.pn.center,around:(obj.pn.around||[]).slice(0,8)}); }
+}
+// 內建知識庫（AI 接唔到時用，令「幫我生成」永遠有得出）
+const PROFILES=[
+  {k:["健身","教練","運動","gym","減肥","重訓","健美"],id:["居家訓練","飲食餐單","減脂","增肌","伸展放鬆","器材推薦","運動傷害","動作示範"],pn:["肚腩減唔到","練極冇效果","冇時間運動","姿勢唔正確","關節容易痛","減完又反彈","冇動力堅持","唔知食咩好"]},
+  {k:["瑜伽","普拉提","pilates"],id:["入門體式","伸展","改善柔軟度","呼吸法","居家練習","痠痛舒緩","體態矯正","冥想放鬆"],pn:["身體好硬","做唔到動作","腰痠背痛","冇時間","初學唔識","容易受傷","靜唔落心","冇進步"]},
+  {k:["美容","化妝","護膚","美妝","彩妝","美甲"],id:["底妝技巧","護膚步驟","開架好物","持妝方法","眉妝","唇妝","卸妝","膚質分析"],pn:["容易脫妝","生暗瘡","毛孔粗大","黑眼圈重","唔識揀產品","化妝太慢","皮膚敏感","顯老憔悴"]},
+  {k:["理財","投資","股票","財務","基金","保險","儲蓄"],id:["記帳方法","儲蓄法","投資入門","保險規劃","被動收入","慳錢技巧","報稅","理財工具"],pn:["月光族","儲唔到錢","唔識投資","怕蝕錢","有負債壓力","唔識報稅","冇退休準備","開支失控"]},
+  {k:["烘焙","甜品","蛋糕","麵包","甜點","西點"],id:["新手食譜","免焗甜品","裝飾技巧","材料選購","失敗補救","器具推薦","擺盤","保存方法"],pn:["整極失敗","冇焗爐","唔識調份量","材料難買","賣相差","唔識定價","好花時間","甜度難控"]},
+  {k:["煮","料理","食譜","廚","餐飲","下廚","菜"],id:["快手餐","一人料理","備餐技巧","慳錢食譜","調味技巧","廚具推薦","剩食利用","便當"],pn:["唔識煮","冇時間煮飯","想食好又慳","調味失敗","買餸唔識揀","浪費食材","餐單重複","唔想洗碗"]},
+  {k:["老師","教學","補習","語言","英文","日語","教育","講師"],id:["學習方法","筆記技巧","考試攻略","記憶法","時間管理","免費資源","發音技巧","練習題"],pn:["讀極唔入腦","冇時間溫習","考試緊張","唔識規劃","背完就忘","冇動力學","唔知點開始","成績上唔到"]},
+  {k:["攝影","影片","剪片","拍","相","攝"],id:["構圖技巧","手機拍攝","打光","調色","剪片技巧","運鏡","器材推薦","後製App"],pn:["影相唔靚","唔識調色","器材太貴","唔識剪片","冇靈感","畫面唔穩","光線差","作品冇人睇"]},
+  {k:["寵物","貓","狗","毛孩","獸醫","寵物美容"],id:["日常照顧","飲食","訓練","健康護理","用品推薦","洗澡","行為問題","美容造型"],pn:["唔識訓練","亂咬亂叫","掉毛嚴重","唔肯食嘢","睇醫生貴","分離焦慮","有體味","洗澡好難搞"]},
+  {k:["親子","媽媽","育兒","湊仔","嬰兒","家長","母嬰"],id:["育兒知識","親子活動","副食品","作息安排","教育方法","用品推薦","情緒管理","收納"],pn:["湊仔好攰","冇自己時間","BB唔肯瞓","唔識教","開支大","另一半唔幫手","擔心發展","冇耐性"]},
+  {k:["旅遊","旅行","自由行","背包","民宿"],id:["行程規劃","平價機票","住宿推薦","打卡景點","行李收拾","當地美食","交通攻略","省錢技巧"],pn:["唔識計劃","預算有限","唔識執行李","踩雷景點","語言不通","訂錯酒店","時間唔夠","容易迷路"]},
+  {k:["穿搭","時尚","服裝","衫","造型","服飾"],id:["日常穿搭","配色技巧","身形修飾","平價單品","配件搭配","場合穿搭","換季穿搭","衣櫥整理"],pn:["唔識襯衫","身形困擾","衫多唔識著","顯矮顯胖","預算有限","跟唔上潮流","場合著錯","衣櫥好亂"]},
+  {k:["手作","DIY","手工","飾物","蠟燭","編織"],id:["新手教學","材料介紹","工具推薦","作品分享","擺設佈置","包裝技巧","接單心得","靈感來源"],pn:["唔識開始","材料難買","做極唔靚","冇時間做","唔識定價","冇靈感","工具太貴","賣唔出"]},
+  {k:["科技","3C","數碼","手機","電腦","軟件","程式"],id:["實用App","手機技巧","電腦教學","AI工具","效率工具","開箱評測","設定教學","省電技巧"],pn:["唔識用","App太多","手機好慢","唔識揀機","擔心私隱","跟唔上","設定複雜","怕買錯"]},
+  {k:["咖啡","咖啡店","手沖","茶"],id:["手沖教學","器具介紹","豆款選購","拉花","冷萃","店舖分享","風味描述","在家沖煮"],pn:["煮得難飲","器具太貴","唔識揀豆","拉花失敗","唔識形容","外面太貴","唔識保存","器具難清"]},
+  {k:["理髮","髮型","造型師","hair"],id:["日常造型","洗護知識","染燙介紹","打理技巧","產品推薦","臉型建議","男士造型","沙龍分享"],pn:["整極唔靚","毛躁乾旱","甩頭髮","唔識揀型","染燙傷髮","唔識打理","頭油多","唔夾臉型"]},
+  {k:["中醫","針灸","養生","把脈","推拿","艾灸"],id:["體質調理","湯水食療","穴位按摩","經絡養生","舒緩失眠","調理月經","四季養生","常見迷思"],pn:["長期失眠","月經失調","腰痠背痛","經常疲倦","腸胃差","濕疹反覆","手腳冰冷","經常頭痛"]},
+  {k:["營養","營養師","減重","體重管理"],id:["均衡飲食","減重餐單","營養補充","外食選擇","血糖管理","腸道健康","備餐","看標示"],pn:["瘦唔落","容易水腫","三高問題","腸胃唔好","食極都攰","唔識揀食物","唔知食幾多","減完反彈"]},
+  {k:["物理治療","痛症","復健","脊醫","整脊"],id:["姿勢矯正","伸展運動","痛症舒緩","辦公室運動","運動復健","肌肉放鬆","居家訓練","護理知識"],pn:["長期腰痛","肩頸痠痛","坐骨神經痛","運動受傷","姿勢唔正","手腕痛","膝頭痛","瞓完仲攰"]},
+  {k:["心理","情緒","諮商","輔導","心理師"],id:["情緒管理","減壓方法","自我照顧","關係相處","改善睡眠","正念練習","認識情緒","求助資源"],pn:["長期焦慮","情緒低落","瞓唔著","壓力好大","冇動力","人際困擾","容易嬲","冇安全感"]},
+  {k:["花藝","花店","花藝師"],id:["花材挑選","保鮮技巧","包裝設計","色彩搭配","節日花束","乾燥花","擺設佈置","送禮建議"],pn:["花好快謝","唔識襯色","唔知買咩花","唔識包裝","花材好貴","擺極唔靚","送禮怕失禮","唔識保養"]}
+];
+function localIndustry(ind){
+  const name=(ind||"").slice(0,6);
+  for(const p of PROFILES){
+    if(p.k.some(kw=>ind.toLowerCase().includes(kw.toLowerCase()))){
+      return { id:{center:name,around:shuffle([...p.id])}, pn:{center:"觀眾煩惱",around:shuffle([...p.pn])} };
+    }
+  }
+  return {
+    id:{center:name,around:["入門教學","常見迷思","前後對比","選擇指南","真實個案","實用技巧","常見問題","進階分享"]},
+    pn:{center:"觀眾煩惱",around:["唔知點揀先啱","試過都冇效","唔知邊個適合","怕搵錯人","資訊太多好亂","價錢唔透明","唔知幾時要搵","冇人教過"]}
+  };
+}
+function aiReady(){ return !!(window.cowork && typeof window.cowork.askClaude==="function"); }
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function waitForAI(ms){
+  return new Promise(resolve=>{
+    if(aiReady()) return resolve(true);
+    const t0=Date.now();
+    const iv=setInterval(()=>{
+      if(aiReady()){ clearInterval(iv); resolve(true); }
+      else if(Date.now()-t0>ms){ clearInterval(iv); resolve(false); }
+    },300);
+  });
+}
+async function autoGenerate(){
+  const inp=document.getElementById("industry");
+  const ind=inp?inp.value.trim():"";
+  if(!ind){ toast("先打入你嘅行業／身份"); if(inp) inp.focus(); return; }
+  const btn=document.getElementById("autoBtn");
+  if(btn){ btn.classList.add("loading"); btn.innerHTML='<span class="sp2"></span>連線中…'; }
+  try{
+    await waitForAI(10000);
+    if(btn) btn.innerHTML='<span class="sp2"></span>AI 搵緊觀眾痛點…';
+    let obj=null,lastErr=null,called=false;
+    for(let attempt=0;attempt<3 && !obj;attempt++){
+      try{
+        if(!(window.cowork&&window.cowork.askClaude)) throw new Error("AI 未連上");
+        called=true;
+        const res=await window.cowork.askClaude(fewShotPrompt(ind),[]);
+        const o=parseJSON(toTrad(extractText(res)));
+        if(o){
+          if(o.id) o.id.around=sanitizeArr(o.id.around);
+          if(o.pn) o.pn.around=sanitizeArr(o.pn.around);
+          if(o.id&&o.pn&&sanitizeArr(o.pn.around).length>=4&&sanitizeArr(o.id.around).length>=4) obj=o;
+        }
+      }catch(err){ lastErr=err; }
+      if(!obj) await sleep(700);
+    }
+    if(!obj){
+      obj=localIndustry(ind);
+      toast(called?"AI 一時唔到，已用內建範例填好":"AI 未連上，已用內建範例填好");
+    } else {
+      toast(`✨ AI 已幫「${ind}」搵到觀眾痛點`);
+    }
+    if(!obj.id.center||obj.id.center.length>8) obj.id.center=ind.slice(0,6);
+    if(!obj.pn.center||obj.pn.center.length>8) obj.pn.center="觀眾煩惱";
+    fillGrids(obj);
+    setTimeout(generate,30);
+  }finally{
+    if(btn){ btn.classList.remove("loading"); btn.innerHTML='幫我生成'; }
+  }
+}
+async function refreshPains(btn){
+  const idG=readGrid(gridId);
+  if(!idG.center){ toast("請先填第一格：你嘅身份"); return; }
+  const cur=readGrid(gridPn).around;
+  if(btn){ btn.classList.add("spin"); btn.disabled=true; }
+  try{
+    await waitForAI(4000);
+    let pains=null;
+    for(let attempt=0;attempt<2 && !pains;attempt++){
+      try{
+        if(!(window.cowork&&window.cowork.askClaude)) break;
+        const prompt=`你係社群內容策劃。行業／身份：「${idG.center}」。`
+          +`請列出 8 個呢個身份嘅目標觀眾真實會有嘅痛點（即係佢哋想搵呢個身份幫手解決嘅問題／症狀）。`
+          +(cur.length?`盡量唔好同以下重複，俾多啲新角度：${cur.join("、")}。`:``)
+          +`每個 2 至 10 個字，全部繁體中文（台灣／香港正體字），禁止簡體字。`
+          +`只輸出一個 JSON 陣列，例如 ["痛點一","痛點二"]，唔好加解釋或 markdown。`;
+        const res=await window.cowork.askClaude(prompt,[]);
+        const arr=sanitizeArr(parseArr(toTrad(extractText(res))));
+        if(arr && arr.length>=4) pains=arr.slice(0,8);
+      }catch(err){}
+      if(!pains) await sleep(600);
+    }
+    if(!pains){ pains=localIndustry(idG.center).pn.around; toast("已換一批（內建範例）"); }
+    else { toast("已換一批觀眾痛點"); }
+    buildGrid(gridPn,{center:readGrid(gridPn).center||"觀眾煩惱",around:pains});
+  }finally{
+    if(btn){ btn.classList.remove("spin"); btn.disabled=false; }
+  }
+}
+
+// ---------- 工具 ----------
+function copyText(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).catch(()=>fallbackCopy(t));}
+  else fallbackCopy(t);
+}
+function fallbackCopy(t){ const ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");}catch(e){}ta.remove(); }
+let toastTimer;
+function toast(msg){ const el=document.getElementById("toast"); if(!el) return; el.textContent=msg;el.classList.add("show");
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("show"),1800); }
+
+// ---------- 事件（逐個安全綁定，缺一個都唔會拖冧其他） ----------
+function on(id,ev,fn){ const e=document.getElementById(id); if(e) e.addEventListener(ev,fn); }
+on("autoBtn","click",autoGenerate);
+on("industry","keydown",e=>{ if(e.key==="Enter")autoGenerate(); });
+on("guideBtn","click",()=>{ const p=document.getElementById("guidePanel"); if(p) p.hidden=!p.hidden; });
+on("refreshPn","click",e=>refreshPains(e.currentTarget));
+on("genBtn","click",generate);
+on("copyBtn","click",()=>{ if(!DATA.length){toast("未有主題，先撳生成");return;} copyText(allText()); toast("已複製全部主題"); });
+on("csvBtn","click",()=>{ if(!DATA.length){toast("未有主題，先撳生成");return;} download("內容主題.csv",allCSV(),"text/csv;charset=utf-8"); });
+on("txtBtn","click",()=>{ if(!DATA.length){toast("未有主題，先撳生成");return;} download("內容主題.txt",allText(),"text/plain;charset=utf-8"); });
+on("dlgCopy","click",()=>{ const dx=document.getElementById("dlgText"); if(dx){ copyText(dx.value); toast("已複製"); } });
+
+// 首次自動生成一批
+generate();
+
+}catch(err){
+  console.error("內容生產器載入錯誤:",err);
+}
+</script>
+</body>
+</html>
