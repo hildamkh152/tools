@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>內容生產器</title>
+<style>
+:root{ color-scheme: light;
+  --bg:#faf7f2; --card:#ffffff; --ink:#2b2823; --sub:#8a8378;
+  --line:#eae4da; --accent:#e2725b; --accent2:#f2b705; --accent-soft:#fcefe9;
+  --id:#e7f0ff; --id-line:#cfe0ff; --id-center:#3b6fd4;
+  --pn:#fdeef2; --pn-line:#f8d3de; --pn-center:#d64b74;
+  --chip:#f4efe7;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+  background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:22px 18px 60px}
+header.top{text-align:center;margin-bottom:6px}
+.top h1{font-size:26px;margin:0 0 4px;letter-spacing:.5px}
+.top p{margin:0;color:var(--sub);font-size:14px}
+.hint{background:var(--accent-soft);border:1px solid var(--pn-line);border-radius:12px;
+  padding:10px 14px;font-size:13px;color:#7a4b3f;margin:16px 0 22px}
+.starter{background:linear-gradient(180deg,#fff,#fbf6ef);border:1px solid var(--line);
+  border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.srow{display:flex;gap:10px;align-items:center}
+@media(max-width:640px){.srow{flex-wrap:wrap}}
+.srow .mag{font-size:20px}
+.srow input{flex:1;min-width:180px;border:1px solid var(--line);border-radius:10px;padding:11px 13px;
+  font-family:inherit;font-size:14px;color:var(--ink);outline:none;background:#fff}
+.srow input:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.stips{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.guidelink{border:0;background:transparent;color:var(--accent);padding:0;font-size:13px;text-decoration:underline}
+.guidelink:hover{color:#d5604a}
+.snote{font-size:12px;color:var(--sub)}
+#autoBtn.loading{opacity:.7;pointer-events:none}
+#autoBtn .sp2{display:inline-block;width:12px;height:12px;border:2px solid #fff;border-top-color:transparent;
+  border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:6px}
+.guide{background:#fffdf6;border:1px solid #f3e4b8;border-radius:14px;padding:14px 18px;margin-bottom:16px}
+.guide h3{margin:0 0 6px;font-size:15px}
+.guide p{margin:0 0 8px;font-size:13px;color:#6b6455}
+.guide ol{margin:0 0 8px;padding-left:20px;font-size:13.5px}
+.guide li{margin:4px 0}
+.guide .gsmall{font-size:12px;color:var(--sub);margin:0}
+.grids{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:760px){.grids{grid-template-columns:1fr}}
+.gcard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;
+  box-shadow:0 1px 3px rgba(0,0,0,.03)}
+.gcard h2{font-size:15px;margin:0 0 3px;display:flex;align-items:center;gap:7px}
+.gcard .desc{font-size:12px;color:var(--sub);margin:0 0 12px}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.cell{border:1px solid var(--line);border-radius:10px;padding:6px;min-height:60px;
+  display:flex;align-items:center;justify-content:center;transition:.15s}
+.cell textarea{width:100%;border:0;background:transparent;resize:none;text-align:center;
+  font-family:inherit;font-size:13px;color:var(--ink);outline:none;overflow:hidden;height:44px;line-height:1.35}
+.cell.center{font-weight:700}
+.grid.id .cell{background:#fff}
+.grid.id .cell.center{background:var(--id);border-color:var(--id-line)}
+.grid.id .cell.center textarea{color:var(--id-center);font-size:15px}
+.grid.pn .cell{background:#fff}
+.grid.pn .cell.center{background:var(--pn);border-color:var(--pn-line)}
+.grid.pn .cell.center textarea{color:var(--pn-center);font-size:15px}
+.cell:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:24px 0 16px}
+button{font-family:inherit;font-size:14px;border-radius:10px;padding:10px 16px;cursor:pointer;
+  border:1px solid var(--line);background:#fff;color:var(--ink);transition:.15s}
+button:hover{border-color:var(--accent);color:var(--accent)}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+button.primary:hover{background:#d5604a;color:#fff}
+button:disabled{opacity:.5;cursor:not-allowed}
+.count{margin-left:auto;font-size:13px;color:var(--sub)}
+.results{margin-top:10px;display:grid;gap:10px}
+.rcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.rcombo{font-size:12px;color:var(--sub);margin-bottom:7px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tag{background:var(--id);color:var(--id-center);border-radius:6px;padding:1px 8px;font-size:11.5px}
+.tag.p{background:var(--pn);color:var(--pn-center)}
+.plus{color:var(--sub)}
+.titles{display:grid;gap:6px}
+.title{display:flex;gap:8px;align-items:flex-start;font-size:14.5px;padding:5px 8px;border-radius:8px}
+.title:hover{background:var(--chip)}
+.title .txt{flex:1}
+.title .copy1{border:0;background:transparent;color:var(--sub);padding:2px 6px;font-size:12px;opacity:.7}
+.title .copy1:hover{color:var(--accent);opacity:1}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+.swapbtn{font-size:12.5px;padding:5px 11px}
+.aibtn{font-size:12.5px;padding:5px 11px;border-style:dashed}
+.aibtn .sp{display:inline-block;width:11px;height:11px;border:2px solid var(--accent);border-top-color:transparent;
+  border-radius:50%;animation:spin .7s linear infinite;vertical-align:-1px;margin-right:5px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.aiwrap{margin-top:8px;display:grid;gap:6px}
+.aititle{font-size:14px;padding:5px 8px;border-radius:8px;background:#fffdf4;border:1px solid #f6e7b0;
+  display:flex;gap:8px;align-items:flex-start}
+.aititle .b{color:var(--accent2);font-size:11px;margin-top:2px}
+.empty{color:var(--sub);text-align:center;padding:40px;font-size:14px}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+  background:#2b2823;color:#fff;padding:9px 18px;border-radius:22px;font-size:13px;opacity:0;
+  transition:.25s;pointer-events:none;z-index:50}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+dialog{border:0;border-radius:16px;padding:0;max-width:600px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+dialog::backdrop{background:rgba(0,0,0,.35)}
+.dlg{padding:18px}
+.dlg h3{margin:0 0 10px;font-size:16px}
+.dlg textarea{width:100%;height:280px;border:1px solid var(--line);border-radius:10px;padding:10px;
+  font-family:inherit;font-size:13px;resize:vertical;color:var(--ink)}
+.dlg .row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.foot{text-align:center;color:var(--sub);font-size:12px;margin-top:34px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>內容生產器</h1>
+    <p>身份 × 觀眾痛點 = 拍不完的主題</p>
+  </header>
+
+  <div class="hint">
+    ✏️ 直接點格仔就可以改字。中間格填你嘅<b>身份</b>同觀眾嘅<b>核心煩惱</b>，周圍 8 格填相關嘅事物同具體困擾。改完撳「交叉生成主題」。
+  </div>
+
+  <!-- 智能起手：輸入行業自動生成 -->
+  <div class="starter">
+    <div class="srow">
+      <span class="mag">🧭</span>
+      <input id="industry" type="text" placeholder="唔知寫咩？打入你嘅行業／身份，例如：健身教練、烘焙店、日語老師…" />
+      <button class="primary" id="autoBtn">幫我生成</button>
+    </div>
+    <div class="stips">
+      <button class="guidelink" id="guideBtn">💡 點樣搵到觀眾嘅煩惱？（引導）</button>
+      <span class="snote">AI 會幫你填好身份 + 觀眾痛點，你再微調就得。</span>
+    </div>
+  </div>
+
+  <!-- 找痛點引導 -->
+  <div class="guide" id="guidePanel" hidden>
+    <h3>🔎 搵觀眾痛點嘅 5 條問題</h3>
+    <p>諗唔到觀眾煩惱？跟住呢幾條問題諗，通常就有答案：</p>
+    <ol>
+      <li><b>時間：</b>佢哋每日邊件事最花時間、最想快啲搞掂？</li>
+      <li><b>金錢：</b>佢哋想慳邊度、想多賺邊度？</li>
+      <li><b>外表 / 健康：</b>佢哋對自己身體、外表最唔滿意咩？</li>
+      <li><b>情緒：</b>佢哋私底下最焦慮、最怕嘅係咩？（怕落後、怕變老、怕做錯）</li>
+      <li><b>知識：</b>佢哋成日 Google、成日問人嘅問題係咩？</li>
+    </ol>
+    <p class="gsmall">Tips：去留言區、社團、蝦皮/淘寶評價、YouTube 影片留言度抄低真人講嘅字眼，會最貼地。</p>
+  </div>
+
+  <div class="grids">
+    <div class="gcard">
+      <h2><span class="dot" style="background:var(--id-center)"></span>第一步 · 定位身份</h2>
+      <p class="desc">中間 = 你係邊個；周圍 = 你最常接觸嘅事物</p>
+      <div class="grid id" id="gridId"></div>
+    </div>
+    <div class="gcard">
+      <h2><span class="dot" style="background:var(--pn-center)"></span>第二步 · 觀眾痛點</h2>
+      <p class="desc">中間 = 觀眾核心煩惱；周圍 = 具體困擾</p>
+      <div class="grid pn" id="gridPn"></div>
+    </div>
+  </div>
+
+  <div class="bar">
+    <button class="primary" id="genBtn">🚀 交叉生成主題</button>
+    <button id="copyBtn">📋 全部複製</button>
+    <button id="csvBtn">⬇️ 下載 CSV</button>
+    <button id="txtBtn">⬇️ 下載 TXT</button>
+    <span class="count" id="count"></span>
+  </div>
+
+  <div class="results" id="results">
+    <div class="empty">撳上面「🚀 交叉生成主題」就會即刻幫你砌出一堆主題 👆</div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<dialog id="exportDlg"><div class="dlg">
+  <h3 id="dlgTitle">匯出內容</h3>
+  <textarea id="dlgText" readonly></textarea>
+  <div class="row">
+    <button id="dlgCopy" class="primary">複製全部</button>
+    <button onclick="document.getElementById('exportDlg').close()">關閉</button>
+  </div>
+</div></dialog>
+
+<script>
+// ---------- 預設範例（上班族） ----------
+const SEED = {
+  id: { center:"上班族", around:["理財","職場技能","通勤日常","減壓","副業","效率工具","健康飲食","穿搭"] },
+  pn: { center:"觀眾煩惱", around:["錢唔夠使","冇時間","工作壓力大","唔想返工","學唔到新嘢","冇成就感","想轉行","成日拖延"] }
+};
+
+// ---------- 建立格子 ----------
+function buildGrid(el, seed, isCenter){
+  el.innerHTML="";
+  // 3x3：index 4 = center
+  const around=[...seed.around];
+  let ai=0;
+  for(let i=0;i<9;i++){
+    const cell=document.createElement("div");
+    cell.className="cell"+(i===4?" center":"");
+    const ta=document.createElement("textarea");
+    ta.rows=1;
+    ta.value = i===4 ? seed.center : (around[ai++]||"");
+    ta.dataset.center = i===4 ? "1":"0";
+    ta.addEventListener("input",()=>autoSize(ta));
+    cell.appendChild(ta);
+    el.appendChild(cell);
+    setTimeout(()=>autoSize(ta),0);
+  }
+}
+function autoSize(ta){ ta.style.height="auto"; ta.style.height=Math.max(44,ta.scrollHeight)+"px"; }
+
+const gridId=document.getElementById("gridId");
+const gridPn=document.getElementById("gridPn");
+buildGrid(gridId,SEED.id);
+buildGrid(gridPn,SEED.pn);
+
+function readGrid(el){
+  const tas=[...el.querySelectorAll("textarea")];
+  let center="";const around=[];
+  tas.forEach(t=>{ const v=t.value.trim(); if(t.dataset.center==="1")center=v; else if(v)around.push(v); });
+  return {center,around};
+}
+
+// ---------- 標題公式 ----------
+const TPL = [
+  (id,topic,pain)=>`《${id}5分鐘搞定${topic}，告別${cleanPain(pain)}！》`,
+  (id,topic,pain)=>`《${id}如何靠${topic}解決「${cleanPain(pain)}」？》`,
+  (id,topic,pain)=>`《${cleanPain(pain)}？試呢個${topic}小技巧就得》`,
+  (id,topic,pain)=>`《3個${topic}方法，令${id}唔再${cleanPain(pain)}》`,
+  (id,topic,pain)=>`《${id}必學：用${topic}拯救${cleanPain(pain)}》`,
+  (id,topic,pain)=>`《我係${id}，靠${topic}擺脫${cleanPain(pain)}的日子》`,
+  (id,topic,pain)=>`《唔使花錢！${id}的${topic}對抗${cleanPain(pain)}實測》`
+];
+function cleanPain(p){ return p.replace(/[好很超]/g,"").replace(/大$|緊$/,""); }
+
+function pick(arr,n){ const c=[...arr];const out=[];while(out.length<n&&c.length){out.push(c.splice(Math.floor(Math.random()*c.length),1)[0]);}return out; }
+
+let DATA=[]; // {id, topic, pain, titles:[]}
+
+function generate(){
+  const idG=readGrid(gridId), pnG=readGrid(gridPn);
+  if(!idG.center){ toast("請先填第一格：你嘅身份"); return; }
+  if(idG.around.length===0||pnG.around.length===0){ toast("周圍格至少各填一個"); return; }
+  DATA=[];
+  idG.around.forEach(topic=>{
+    pnG.around.forEach(pain=>{
+      const pool=shuffle([...TPL,...EXTRA]); // 每組獨立洗牌嘅標題公式池
+      const d={id:idG.center,topic,pain,pool,offset:0,titles:[],ai:[]};
+      d.titles=threeFrom(d);
+      DATA.push(d);
+    });
+  });
+  render();
+  toast(`砌好 ${DATA.length} 組主題！`);
+}
+// 由公式池取 3 個例子
+function threeFrom(d){
+  const out=[];
+  for(let k=0;k<3;k++){ out.push(d.pool[(d.offset+k)%d.pool.length](d.id,d.topic,d.pain)); }
+  return out;
+}
+// 換一批：向後推 3 個公式，原地更換
+function shuffleCombo(i){
+  const d=DATA[i];
+  d.offset=(d.offset+3)%d.pool.length;
+  d.titles=threeFrom(d);
+  const tt=document.getElementById("tt-"+i);
+  if(tt){ tt.innerHTML=d.titles.map(t=>rowTitle(t)).join("");
+    tt.querySelectorAll(".copy1").forEach(b=>b.onclick=()=>{copyText(b.dataset.t);toast("已複製標題");}); }
+  updCount();
+}
+function shuffle(a){ const c=[...a];for(let i=c.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[c[i],c[j]]=[c[j],c[i]];}return c; }
+
+function render(){
+  const box=document.getElementById("results");
+  if(!DATA.length){ box.innerHTML='<div class="empty">未有主題</div>'; return; }
+  box.innerHTML="";
+  DATA.forEach((d,i)=>{
+    const card=document.createElement("div");card.className="rcard";
+    const titlesHtml=d.titles.map(t=>rowTitle(t)).join("");
+    card.innerHTML=`
+      <div class="rcombo"><span class="tag">${esc(d.topic)}</span><span class="plus">＋</span><span class="tag p">${esc(d.pain)}</span></div>
+      <div class="titles" id="tt-${i}">${titlesHtml}</div>
+      <div class="aiwrap" id="ai-${i}"></div>
+      <div class="btnrow">
+        <button class="swapbtn" data-i="${i}">🔄 換一批例子</button>
+        <button class="aibtn" data-i="${i}">✨ AI 生成更多變化</button>
+      </div>`;
+    box.appendChild(card);
+  });
+  box.querySelectorAll(".copy1").forEach(b=>b.onclick=()=>{copyText(b.dataset.t);toast("已複製標題");});
+  box.querySelectorAll(".swapbtn").forEach(b=>b.onclick=()=>shuffleCombo(+b.dataset.i));
+  box.querySelectorAll(".aibtn").forEach(b=>b.onclick=()=>aiMore(+b.dataset.i,b));
+  updCount();
+}
+function updCount(){
+  document.getElementById("count").textContent=`共 ${DATA.length} 組 · ${DATA.reduce((a,d)=>a+d.titles.length+d.ai.length,0)} 個標題`;
+}
+function rowTitle(t){ return `<div class="title"><span class="txt">${esc(t)}</span><button class="copy1" data-t="${esc(t)}">複製</button></div>`; }
+function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+// ---------- AI 生成更多變化 ----------
+async function aiMore(i,btn){
+  const d=DATA[i];
+  const hasAI = window.cowork && typeof window.cowork.askClaude==="function";
+  btn.disabled=true; btn.innerHTML='<span class="sp"></span>生成緊…';
+  try{
+    let titles=[];
+    if(hasAI){
+      const prompt=`你係短影音內容策劃。身份：「${d.id}」，主題方向：「${d.topic}」，觀眾痛點：「${d.pain}」。`
+        +`請生成 5 個吸睛、口語化、適合 Reels/TikTok/小紅書 的影片標題。`
+        +`【必須全部用繁體中文（台灣／香港正體字），絕對唔可以出現任何簡體字】。`
+        +`每個標題一行，只輸出標題本身，唔好加編號、符號或解釋。`;
+      const res=await window.cowork.askClaude(prompt,[]);
+      const text = typeof res==="string"?res:(res&&(res.text||res.content||JSON.stringify(res)))||"";
+      titles=text.split("\n").map(s=>s.replace(/^[\s\-\*\d\.、）)]+/,"").trim()).filter(s=>s.length>3).slice(0,6);
+    }
+    if(!titles.length){ titles=localVariations(d); } // fallback
+    d.ai=[...d.ai,...titles];
+    const wrap=document.getElementById("ai-"+i);
+    titles.forEach(t=>{ const el=document.createElement("div");el.className="aititle";
+      el.innerHTML=`<span class="b">✨</span><span class="txt">${esc(t)}</span>`;
+      el.onclick=()=>{copyText(t);toast("已複製標題");}; wrap.appendChild(el); });
+    document.getElementById("count").textContent=`共 ${DATA.length} 組 · ${DATA.reduce((a,x)=>a+x.titles.length+x.ai.length,0)} 個標題`;
+  }catch(e){
+    const titles=localVariations(d); d.ai=[...d.ai,...titles];
+    const wrap=document.getElementById("ai-"+i);
+    titles.forEach(t=>{ const el=document.createElement("div");el.className="aititle";
+      el.innerHTML=`<span class="b">✨</span><span class="txt">${esc(t)}</span>`;
+      el.onclick=()=>{copyText(t);toast("已複製標題");}; wrap.appendChild(el); });
+  }finally{
+    btn.disabled=false; btn.innerHTML='✨ AI 生成更多變化';
+  }
+}
+// 離線後備變化（無 AI 時仍可用）
+const EXTRA=[
+  (id,t,p)=>`《${id}唔講你唔知：${t}原來可以救${cleanPain(p)}》`,
+  (id,t,p)=>`《一條片教會你：${t}對付${cleanPain(p)}的3步驟》`,
+  (id,t,p)=>`《${cleanPain(p)}的${id}，最後靠${t}翻身》`,
+  (id,t,p)=>`《別再${cleanPain(p)}！${id}的${t}日常大公開》`,
+  (id,t,p)=>`《${t} × ${id}：連我媽都問點解咁快搞掂${cleanPain(p)}》`
+];
+function localVariations(d){ return pick(EXTRA,3).map(fn=>fn(d.id,d.topic,d.pain)); }
+
+// ---------- 匯出 ----------
+function allText(){
+  return DATA.map(d=>{
+    const all=[...d.titles,...d.ai];
+    return `【${d.topic} ＋ ${d.pain}】\n`+all.map(t=>"  • "+t).join("\n");
+  }).join("\n\n");
+}
+function allCSV(){
+  const rows=[["身份","主題","痛點","標題","來源"]];
+  DATA.forEach(d=>{
+    d.titles.forEach(t=>rows.push([d.id,d.topic,d.pain,t,"公式"]));
+    d.ai.forEach(t=>rows.push([d.id,d.topic,d.pain,t,"AI"]));
+  });
+  return "﻿"+rows.map(r=>r.map(c=>`"${(c||"").replace(/"/g,'""')}"`).join(",")).join("\n");
+}
+function download(name,content,type){
+  try{
+    const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();
+    a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+    toast("開始下載 "+name);
+  }catch(e){ openExport(name+"（複製以下內容儲存）",content); }
+}
+function openExport(title,text){
+  document.getElementById("dlgTitle").textContent=title;
+  document.getElementById("dlgText").value=text;
+  document.getElementById("exportDlg").showModal();
+}
+
+// ---------- 工具 ----------
+function copyText(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).catch(()=>fallbackCopy(t));}
+  else fallbackCopy(t);
+}
+function fallbackCopy(t){ const ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");}catch(e){}ta.remove(); }
+let toastTimer;
+function toast(msg){ const el=document.getElementById("toast");el.textContent=msg;el.classList.add("show");
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("show"),1800); }
+
+// ---------- 智能起手：輸入行業自動生成內容 ----------
+function fillGrids(obj){
+  if(obj.id&&obj.id.center){ buildGrid(gridId,{center:obj.id.center,around:(obj.id.around||[]).slice(0,8)}); }
+  if(obj.pn&&obj.pn.center){ buildGrid(gridPn,{center:obj.pn.center,around:(obj.pn.around||[]).slice(0,8)}); }
+}
+function parseJSON(text){
+  if(!text) return null;
+  let t=text.replace(/```json/gi,"").replace(/```/g,"").trim();
+  const a=t.indexOf("{"), b=t.lastIndexOf("}");
+  if(a>=0&&b>a){ t=t.slice(a,b+1); }
+  try{ return JSON.parse(t); }catch(e){ return null; }
+}
+async function autoGenerate(){
+  const ind=document.getElementById("industry").value.trim();
+  if(!ind){ toast("先打入你嘅行業／身份"); document.getElementById("industry").focus(); return; }
+  const btn=document.getElementById("autoBtn");
+  btn.classList.add("loading"); btn.innerHTML='<span class="sp2"></span>生成緊…';
+  const hasAI = window.cowork && typeof window.cowork.askClaude==="function";
+  try{
+    let obj=null;
+    if(hasAI){
+      const prompt=`我做「${ind}」，想做短影音／社群內容。請幫我用「身份定位 × 觀眾痛點」發想內容。`
+        +`嚴格只輸出 JSON，格式如下：`
+        +`{"id":{"center":"我嘅身份(4字內)","around":["8個我最常接觸/可分享嘅主題方向"]},`
+        +`"pn":{"center":"觀眾核心煩惱(4字內)","around":["8個具體、口語化嘅觀眾痛點"]}}。`
+        +`around 各要 8 個，貼近真實觀眾講法，唔好加解釋、唔好加 markdown。`
+        +`【所有文字必須全部用繁體中文（台灣／香港正體字），絕對唔可以出現任何簡體字】。`;
+      const res=await window.cowork.askClaude(prompt,[]);
+      const text = typeof res==="string"?res:(res&&(res.text||res.content||JSON.stringify(res)))||"";
+      obj=parseJSON(text);
+    }
+    if(!obj || !obj.id || !obj.pn){ obj=localIndustry(ind); toast(hasAI?"用備援方案生成":"已生成（示範）"); }
+    else{ toast("已幫你生成內容！"); }
+    fillGrids(obj);
+    setTimeout(generate,30);
+  }catch(e){
+    fillGrids(localIndustry(ind)); setTimeout(generate,30); toast("已生成（備援）");
+  }finally{
+    btn.classList.remove("loading"); btn.innerHTML='幫我生成';
+  }
+}
+// 無 AI 時嘅通用備援
+function localIndustry(ind){
+  return {
+    id:{center:ind.slice(0,6),around:["入門教學","常見錯誤","工具推薦","前後對比","一日日常","省錢技巧","客人問答","進階秘訣"]},
+    pn:{center:"觀眾煩惱",around:["唔知點開始","冇時間","怕做錯","冇預算","冇進步","太多資訊揀唔到","堅持唔到","怕被人笑"]}
+  };
+}
+
+// ---------- 事件 ----------
+document.getElementById("autoBtn").onclick=autoGenerate;
+document.getElementById("industry").addEventListener("keydown",e=>{ if(e.key==="Enter")autoGenerate(); });
+document.getElementById("guideBtn").onclick=()=>{ const p=document.getElementById("guidePanel"); p.hidden=!p.hidden; };
+document.getElementById("genBtn").onclick=generate;
+document.getElementById("copyBtn").onclick=()=>{ if(!DATA.length){toast("未有主題，先撳生成");return;} copyText(allText()); toast("已複製全部主題"); };
+document.getElementById("csvBtn").onclick=()=>{ if(!DATA.length){toast("未有主題，先撳生成");return;} download("內容主題.csv",allCSV(),"text/csv;charset=utf-8"); };
+document.getElementById("txtBtn").onclick=()=>{ if(!DATA.length){toast("未有主題，先撳生成");return;} download("內容主題.txt",allText(),"text/plain;charset=utf-8"); };
+document.getElementById("dlgCopy").onclick=()=>{ copyText(document.getElementById("dlgText").value); toast("已複製"); };
+
+// 首次自動生成一批
+generate();
+</script>
+</body>
+</html>
